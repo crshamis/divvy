@@ -1,21 +1,16 @@
-### Divvy Case Study ###
-# This analysis is based on the Divvy case study "'Sophisticated, Clear, and Polished’: Divvy and Data Visualization" written by Kevin Hartman (found here: https://artscience.blog/home/divvy-dataviz-case-study). The purpose of this script is to consolidate downloaded Divvy data into a single dataframe and then conduct simple analysis to help answer the key question: “In what ways do members and casual riders use Divvy bikes differently?”
-
-#############################
-# STEP 0: LOAD PACKAGES
-#############################
+# STEP 0: LOAD PACKAGES AND SET WORKING DIRECTORY
+# Load packages
 library(tidyverse)  #helps import and wrangle data
 library(lubridate)  #helps wrangle date attributes
 library(dplyr) #helps with data manipulation
 library(ggplot2)  #helps visualize data
 
-# Set working directory
+# Set local working directory
 getwd() #display working directory
 setwd("~/Library/CloudStorage/GoogleDrive-crshamis@gmail.com/My Drive/1. Data Analyst/Coursera/Module 8/Cyclistic Case Study/R Directory") #set working directory to simplify calls to data
 
-#############################
+
 # STEP 1: COLLECT DATA
-#############################
 # Upload Divvy datasets (csv files) here
 tripdata_202204 <- read.csv("202204-divvy-tripdata.csv")
 tripdata_202205 <- read.csv("202205-divvy-tripdata.csv")
@@ -31,10 +26,8 @@ tripdata_202302 <- read.csv("202302-divvy-tripdata.csv")
 tripdata_202303 <- read.csv("202303-divvy-tripdata.csv")
 
 
-##########################################################
 # STEP 2: WRANGLE DATA AND COMBINE INTO A SINGLE FILE
-##########################################################
-# Before creating a master dataframe, ensuring consistent column naming conventions
+# Before creating a master data frame, ensuring consistent column naming conventions
 # Creating vectors of column names from each file
 cols_202204 <- colnames(tripdata_202204)
 cols_202205 <- colnames(tripdata_202205)
@@ -65,7 +58,7 @@ compare_cols <- data.frame(
   td_202303 = cols_202303
   )
 View(compare_cols)
-## Column names have been confirmed for consistency
+# NOTE: Column names have been confirmed for consistency
 
 # Stack individual month's data frames into a single data frame
 ltm_trips <- bind_rows(
@@ -83,9 +76,8 @@ ltm_trips <- bind_rows(
   tripdata_202303
 )
 
-##########################################################
+
 # STEP 3: CLEAN UP AND ADD DATA TO PREPARE FOR ANALYSIS
-##########################################################
 # Inspecting the new table that has been created
 colnames(ltm_trips) # list of column names 
 dim(ltm_trips)  # dimensions of data frame (#columns & #rows)
@@ -114,12 +106,8 @@ ltm_trips_clean$day <- format(as.Date(ltm_trips_clean$date), "%d")
 ltm_trips_clean$year <- format(as.Date(ltm_trips_clean$date), "%Y")
 ltm_trips_clean$day_of_week <- format(as.Date(ltm_trips_clean$date), "%A")
 
-# Adding calculated field for trip_duration & remove any where the value is less than zero
+# Adding calculated field for trip_duration & removing values less than or equal to zero
 ltm_trips_clean$trip_duration <- difftime(ltm_trips_clean$ended_at,ltm_trips_clean$started_at, units = "mins")
-
-# Creating a variable for speed in mph
-ltm_trips_clean %>% 
-  speed_mph <- (distance_miles / trip_duration) * 60 
 
 # Inspecting the structure of the data frame
 str(ltm_trips_clean)
@@ -127,8 +115,6 @@ str(ltm_trips_clean)
 # Converting "trip_duration" and "distance_miles" from Factor to numeric so we can run calculations on the data
 ltm_trips_clean$trip_duration <- as.numeric(as.character(ltm_trips_clean$trip_duration))
 is.numeric(ltm_trips_clean$trip_duration)
-ltm_trips_clean$distance_miles <- as.numeric(as.character(ltm_trips_clean$distance_miles))
-is.numeric(ltm_trips_clean$distance_miles)
 
 # Running summary statistics to determine any possible exclusions
 summary(ltm_trips_clean)
@@ -138,7 +124,7 @@ summary(ltm_trips_clean)
 # (2) Min distance_miles is zero - remove all observations = 0
 
 ltm_trips_v2 <- ltm_trips_clean %>% 
-  filter(trip_duration > 0 & distance_miles > 0)
+  filter(trip_duration > 0)
 
 nrow(ltm_trips_clean) - nrow(ltm_trips_v2)
 # Note: 310,819 observations were removed by this filter
@@ -201,7 +187,7 @@ ltm_trips_v2 %>%
             ,average_duration = mean(trip_duration)) %>% 
   arrange(member_casual, month)  %>% 
   ggplot(aes(x = month, y = number_of_rides, fill = member_casual)) +
-  geom_col(position = "dodge"
+  geom_col(position = "dodge")
 
 # Visualizing average trip duration by membership type arranged by month 
 ltm_trips_v2 %>% 
@@ -213,15 +199,20 @@ ltm_trips_v2 %>%
   geom_col(position = "dodge")
 
 
-##################################################################
 # STEP 5: EXPORT SUMMARY FILE FOR FURTHER ANALYSIS
-##################################################################
 # Exporting to CSV for replicating visualization in Excel or Tableau
+# Average trip duration for each day of the week 
 dow_averages <- aggregate(ltm_trips_v2$trip_duration ~ ltm_trips_v2$member_casual + ltm_trips_v2$day_of_week, FUN = mean)
 write.csv(dow_averages, file = 'ltm_trip_dow_avg.csv')
 
+# Total number of rides for each day of the week
+dow_sums <- aggregate(ltm_trips_v2$trip_duration ~ ltm_trips_v2$member_casual + ltm_trips_v2$day_of_week, FUN = length)
+write.csv(dow_sums, file = 'ltm_trip_dow_sums.csv')
 
+# Average trip duration for each month of the year
+monthly_averages <- aggregate(ltm_trips_v2$trip_duration ~ ltm_trips_v2$member_casual + ltm_trips_v2$month, FUN = mean)
+write.csv(monthly_averages, file = 'ltm_trip_monthly_avg.csv')
 
-
-
-
+# Total number of rides for each month of the year
+montly_sums <- aggregate(ltm_trips_v2$trip_duration ~ ltm_trips_v2$member_casual + ltm_trips_v2$month, FUN = length)
+write.csv(montly_sums, file = 'ltm_trip_monthly_sums.csv')
