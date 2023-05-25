@@ -131,9 +131,8 @@ nrow(ltm_trips_clean) - nrow(ltm_trips_v2)
 
 summary(ltm_trips_v2)
 
-#################################
-# STEP 4: DESCRIPTIVE ANALYSIS
-#################################
+
+# STEP 4: CONDUCT DESCRIPTIVE ANALYSIS
 # Descriptive analysis on ride_length (all figures in minutes)
 mean(ltm_trips_v2$trip_duration) #straight average (total ride length / rides)
 median(ltm_trips_v2$trip_duration) #midpoint number in the ascending array of ride lengths
